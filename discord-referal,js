@@ -1,0 +1,49 @@
+const Discord = require('discord.js');
+const axios = require('axios');
+
+// Discord bot token obtained from the Discord Developer Portal
+const token = 'YOUR_DISCORD_BOT_TOKEN';
+
+// API endpoint to call when someone joins with a referral code
+const referralAPI = 'https://your-referral-api.com/verify-referral';
+
+// Create a new Discord client
+const client = new Discord.Client();
+
+// Event handler when the bot is ready and connected to Discord
+client.on('ready', () => {
+  console.log(`Logged in as ${client.user.tag}`);
+});
+
+// Event handler when someone joins the server
+client.on('guildMemberAdd', (member) => {
+  const guild = member.guild;
+  const referralCode = extractReferralCode(member);
+
+  if (referralCode) {
+    // Call the referral API with the referral code
+    axios.post(referralAPI, { referralCode })
+      .then((response) => {
+        // Handle the API response if needed
+        console.log(response.data);
+      })
+      .catch((error) => {
+        // Handle API call errors
+        console.error('Referral API error:', error);
+      });
+  }
+});
+
+// Extract referral code from the new guild member
+function extractReferralCode(member) {
+  const referralCodeRegex = /referral=([\w-]+)/;
+  const invite = member.guild.fetchInvites().find((invite) => {
+    const match = referralCodeRegex.exec(invite.url);
+    return match && match[1];
+  });
+
+  return invite ? invite.code : null;
+}
+
+// Log in to Discord using the bot token
+client.login(token);
